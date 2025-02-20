@@ -32,4 +32,6 @@ class Inscripcion extends Model
     {
         return $this->belongsTo(TipoInscripcion::class);
     }
+
+
 }

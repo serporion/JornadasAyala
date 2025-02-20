@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\InscripcionRequest;
 use App\Models\Inscripcion;
+use App\Models\TipoInscripcion;
 use Illuminate\Http\Request;
 use App\Models\Evento;
 use Illuminate\Support\Facades\DB;
@@ -30,259 +31,157 @@ class InscripcionController extends Controller
     public function store(InscripcionRequest $request)
     {
         $eventosSeleccionados = $request->input('eventos'); // IDs de los eventos seleccionados
+        $detalleInscripcion = []; // Para almacenar el detalle de inscripción
         $user = auth()->user(); // Usuario autenticado
 
-        // Filtrar eventos por tipo
-        $conferencias = Evento::whereIn('id', $eventosSeleccionados)
-            ->where('tipo', 'conferencia')
-            ->get();
 
-        $talleres = Evento::whereIn('id', $eventosSeleccionados)
-            ->where('tipo', 'taller')
-            ->get();
-
-        // Contar el total de conferencias y talleres seleccionados
-        $totalConferencias = $conferencias->count();
-        $totalTalleres = $talleres->count();
-
-        // Validar límites de selección
-        if ($totalConferencias > 5) {
-            return redirect()->back()->withErrors([
-                'eventos' => 'Solo puedes seleccionar un máximo de 5 conferencias.',
-            ])->withInput();
-        }
-
-        if ($totalTalleres > 4) {
-            return redirect()->back()->withErrors([
-                'eventos' => 'Solo puedes seleccionar un máximo de 4 talleres.',
-            ])->withInput();
-        }
-
-        // VALIDACIÓN ESPECÍFICA PARA INSCRIPCIÓN GRATUITA
-        if ($request->input('tipo_inscripcion') === 'gratuita') {
-            // Comprobamos si el correo del usuario está en la tabla `alumnos`
-            $existeEnAlumnos = DB::table('alumnos')->where('email', $user->email)->exists();
-
-            if (!$existeEnAlumnos) {
-                // Si no está, volvemos al formulario con un error
-                return redirect()->route('inscripcion.index')
-                    ->withErrors(['error' => 'Su correo electrónico no está registrado como alumno.'])
-                    ->withInput();
-            }
-        }
-
-        // FILTRAR EVENTOS PARA RESUMEN
-        $eventos = Evento::whereIn('id', $eventosSeleccionados)->get();
-        $totalCoste = $eventos->sum('costo'); // Suma de los costos de los eventos
-
-        // Redirigir al resumen
-        return view('inscripcion.resumen', [
-            'eventos' => $eventos,
-            'totalCoste' => $totalCoste,
-            'tipo_inscripcion' => $request->input('tipo_inscripcion')
-        ]);
-    }
-
-
-    public function confirmacion(Request $request)
-    {
-        // Decodificar los datos enviados desde el formulario de resumen
-        $eventosSeleccionados = json_decode($request->input('eventos'), true);
-        $tipoInscripcion = $request->input('tipo_inscripcion');
-        $user = auth()->user(); // Usuario autenticado
-
-        // Validar que los eventos aún existan y estén disponibles
+        // Filtrar eventos seleccionados
         $eventos = Evento::whereIn('id', $eventosSeleccionados)->get();
 
-        if ($eventos->isEmpty() || $eventos->count() !== count($eventosSeleccionados)) {
-            return redirect()->route('inscripcion.index')
-                ->withErrors(['eventos' => 'Algunos de los eventos seleccionados ya no están disponibles. Intente nuevamente.']);
-        }
-
-        // Validar límites de selección de conferencias y talleres
+        // Validar límites de selección (conferencias y eventos ) y tipoInscripcion,
+        // definidas de forma personal, no en el RequestForm.
         $conferencias = $eventos->where('tipo', 'conferencia');
         $talleres = $eventos->where('tipo', 'taller');
 
         if ($conferencias->count() > 5) {
-            return redirect()->route('inscripcion.index')
-                ->withErrors(['eventos' => 'No puedes inscribirte a más de 5 conferencias.'])
-                ->withInput();
+            return redirect()->back()->withErrors([
+                'eventos' => 'Solo puedes seleccionar un máximo de 5 conferencias.',
+            ])->withInput();
         }
 
         if ($talleres->count() > 4) {
-            return redirect()->route('inscripcion.index')
-                ->withErrors(['eventos' => 'No puedes inscribirte a más de 4 talleres.'])
-                ->withInput();
+            return redirect()->back()->withErrors([
+                'eventos' => 'Solo puedes seleccionar un máximo de 4 talleres.',
+            ])->withInput();
         }
 
-        // Validación de gratuidad repetida por seguridad
-        if ($tipoInscripcion === 'gratuita') {
-            $existeEnAlumnos = DB::table('alumnos')->where('email', $user->email)->exists();
+        foreach ($eventos as $evento) {
+            $tipoInscripcion = $request->input("tipo_inscripcion_{$evento->id}"); // Radio dinámico
 
-            if (!$existeEnAlumnos) {
-                return redirect()->route('inscripcion.index')
-                    ->withErrors(['error' => 'Su correo electrónico no está registrado como alumno.'])
-                    ->withInput();
+            if (!$tipoInscripcion) {
+                return redirect()->back()->withErrors([
+                    "tipo_inscripcion_error_{$evento->id}" => 'Debe seleccionar el tipo de inscripción para este evento.',
+                ])->withInput();
             }
+
+            // Procesar el costo según el tipo inscripción
+            $costoEvento = ($tipoInscripcion === 'gratuita') ? 0 : (($tipoInscripcion === 'virtual') ? 10 : 20);
+
+            $detalleInscripcion[] = [
+                'evento' => $evento->nombre,
+                'tipo_inscripcion' => ucfirst($tipoInscripcion),
+                'costo' => $costoEvento,
+            ];
+
+            // Agregar datos adicionales del evento al detalle (si es necesario)
+            $evento->costo = $costoEvento; // Añadimos costo al modelo para usarlo en la vista
         }
 
-        // Iniciar transacción para guardar inscripciones y proceder con el pago
+        $totalCoste = collect($detalleInscripcion)->sum('costo'); // Sumar costos
+
+        // Redirigir al resumen incluyendo los eventos seleccionados
+        return view('inscripcion.resumen', [
+            'detalle' => $detalleInscripcion,
+            'totalCoste' => $totalCoste,
+            'eventos' => $eventos, // Incluimos todos los eventos seleccionados
+        ]);
+    }
+
+    public function gestionarTransaccion(Request $request)
+    {
+        $user = auth()->user(); // Usuario autenticado
+        $eventosSeleccionados = json_decode($request->input('eventos'), true);
+        $tipoInscripcionNombre = $request->input('tipo_inscripcion_0');
+
+
+        // BUSCAR EL ID DEL TIPO DE INSCRIPCIÓN
+        $tipoInscripcionId = TipoInscripcion::where('nombre', $tipoInscripcionNombre)->value('id');
+
+
+        // Transacción de Control
+
         DB::beginTransaction();
+
         try {
-            foreach ($eventosSeleccionados as $eventoId) {
-                Inscripcion::create([
-                    'user_id' => $user->id,
-                    'evento_id' => $eventoId,
-                    'tipo_inscripcion' => $tipoInscripcion,
-                ]);
+
+            if (!$tipoInscripcionId) {
+                throw new \Exception("No se encontró un tipo de inscripción con el nombre: $tipoInscripcionNombre");
             }
 
-            // Ejemplo: Proceso de pago con PayPal o cualquier otro servicio
-            // $pagoExitoso = $this->procesarPago($user, $eventos->sum('costo'));
-            // if (!$pagoExitoso) throw new \Exception('Error procesando el pago');
+            // 1. Validar y restar plazas
+            $verificacionExitosa = $this->verificarYRestarPlazas($user, $eventosSeleccionados);
+            if (!$verificacionExitosa) {
+                throw new \Exception('Error verificando o restando plazas.');
+            }
 
-            DB::commit();
+            // 2. Realizar las inscripciones
+            $confirmacionExitosa = $this->confirmacion($user, $eventosSeleccionados, $tipoInscripcionId);
+            if (!$confirmacionExitosa) {
+                throw new \Exception('Error durante las inscripciones.');
+            }
 
-            return redirect()->route('inscripcion.exitosa')
-                ->with('success', 'Inscripciones y pago completados exitosamente.');
+
+            // 3. Procesar el pago
+
+            $paypalController = resolve(PayPalController::class);
+            $paypalController->iniciarPago($eventosSeleccionados);
+
+            return null;
+
         } catch (\Exception $e) {
             DB::rollBack();
 
             return redirect()->route('inscripcion.index')
-                ->withErrors(['error' => 'Hubo un problema al procesar tu inscripción. Inténtalo nuevamente.']);
+                ->withErrors(['error' => 'Error procesando el pago: ' . $e->getMessage()]);
         }
     }
-    /*
-    //public function store(Request $request)
-    public function store(InscripcionRequest $request)
+
+
+    private function confirmacion($user, $eventosSeleccionados, $tipoInscripcionId)
     {
-
-        // Validamos campos del formulario, pero lo hace el FormRequest propio.
-        /*
-        $request->validate([
-            'eventos' => 'required|array|min:1', // Mínimo 1 evento seleccionado
-            'tipo_inscripcion' => 'required|string', // Tipo de inscripción es obligatorio
-        ]);
-
-
-        $eventosSeleccionados = $request->input('eventos'); // IDs de los eventos seleccionados
-        $user = auth()->user(); // Usuario autenticado
-
-        // Filtrar eventos por tipo
-        $conferencias = Evento::whereIn('id', $eventosSeleccionados)
-            ->where('tipo', 'conferencia')
-            ->get();
-
-        $talleres = Evento::whereIn('id', $eventosSeleccionados)
-            ->where('tipo', 'taller')
-            ->get();
-
-        // Contar el total de conferencias y talleres seleccionados
-        $totalConferencias = $conferencias->count();
-        $totalTalleres = $talleres->count();
-
-        // Validar límites de selección
-        if ($totalConferencias > 5) {
-            return redirect()->back()->withErrors([
-                'eventos' => 'Solo puedes seleccionar un máximo de 5 conferencias.',
-            ])->withInput();
-        }
-
-        if ($totalTalleres > 4) {
-            return redirect()->back()->withErrors([
-                'eventos' => 'Solo puedes seleccionar un máximo de 4 talleres.',
-            ])->withInput();
-        }
-
-        // VALIDACIÓN ESPECÍFICA PARA INSCRIPCIÓN GRATUITA
-        if ($request->input('tipo_inscripcion') === 'gratuita') {
-            // Comprobamos si el correo del usuario está en la tabla `alumnos`
-            $existeEnAlumnos = DB::table('alumnos')->where('email', $user->email)->exists();
-
-            if (!$existeEnAlumnos) {
-                // Si no está, volvemos al formulario con un error
-                return redirect()->route('inscripcion.index')
-                    ->withErrors(['error' => 'Su correo electrónico no está registrado como alumno.'])
-                    ->withInput();
-            }
-        }
-
-
-
-        // PROCESO DE INSCRIPCIÓN
         foreach ($eventosSeleccionados as $eventoId) {
-            Inscripcion::create([
-                'user_id' => auth()->id(),
-                'evento_id' => $eventoId,
-                'tipo_inscripcion' => $request->input('tipo_inscripcion'),
+            //Creamos la inscripción en las tablas correspondientes.
+            //En esta variable grabamos la inscripcion realizada y luego recuperamos su id.
+
+            $evento = Evento::findOrFail($eventoId);
+
+            $inscripcion = Inscripcion::create([
+                'user_id' => $user->id,
+                'tipo_inscripcion_id' => $tipoInscripcionId,
+                'fecha_inscripcion' => now()
             ]);
+
+            // Crear el registro en inscripcion_eventos
+            DB::table('inscripcion_eventos')->insert([
+                'inscripcion_id' => $inscripcion->id,
+                'evento_id' => $evento->id,
+            ]);
+
+
         }
 
-        // FILTRAR EVENTOS PARA RESUMEN
+        return true;
+    }
+
+
+    private function verificarYRestarPlazas($user, $eventosSeleccionados)
+    {
         $eventos = Evento::whereIn('id', $eventosSeleccionados)->get();
-        $totalCoste = $eventos->sum('costo'); // Suma de los costos de los eventos
 
-        // Redirigir a la vista de resumen
-        return view('inscripcion.resumen', [
-            'eventos' => $eventos,
-            'totalCoste' => $totalCoste
-        ]);
+        if ($eventos->isEmpty() || $eventos->count() !== count($eventosSeleccionados)) {
+            return false; // Error: Hay eventos no válidos
+        }
+
+        foreach ($eventos as $evento) {
+            if ($evento->cupo_maximo <= 0) {
+                return false; // Error: No hay plazas disponibles
+            }
+            // Restar plaza
+            $evento->restarPlaza('cupo_maximo');
+        }
+
+        return true; // Todo válido
     }
-    */
-
-    /*
-    public function store(Request $request)
-    {
-        //$data = $request->all(); // Obtener todos los datos del formulario como el del index pero tras la respuesta.
-
-        //Valido si el campo está presente y si por lo menos hay 1
-        $request->validate([
-            'eventos' => 'required|array|min:1',
-            'tipo_inscripcion' => 'required|string',
-        ]);
-
-
-        $eventosSeleccionados = $request->input('eventos');
-
-        // Uso Eloquent para determinar que son
-        $conferencias = Evento::whereIn('id', $eventosSeleccionados)
-            ->where('tipo', 'conferencia')
-            ->get();
-
-        $talleres = Evento::whereIn('id', $eventosSeleccionados)
-            ->where('tipo', 'taller')
-            ->get();
-
-        // Contar los conferencias y talleres
-        $totalConferencias = $conferencias->count();
-        $totalTalleres = $talleres->count();
-
-        // Validar las restricciones
-        if ($totalConferencias > 5) {
-            return redirect()->back()->withErrors([
-                'eventos' => 'Solo puedes seleccionar un máximo de 5 conferencias.',
-            ])->withInput();
-        }
-
-        if ($totalTalleres > 4) {
-            return redirect()->back()->withErrors([
-                'eventos' => 'Solo puedes seleccionar un máximo de 4 talleres.',
-            ])->withInput();
-        }
-
-        // Inscribir al usuario (proceso de inscripción)
-        foreach ($eventosSeleccionados as $eventoId) {
-            Inscripcion::create([
-                'user_id' => auth()->id(),
-                'evento_id' => $eventoId,
-                'tipo_inscripcion' => $request->input('tipo_inscripcion'),
-            ]);
-        }
-
-        return redirect()->route('inscripcion.exitosa')->with('success', 'Inscripción completada exitosamente.');
-    }
-    */
-
 
 
 }

@@ -54,10 +54,19 @@
 
 <header>
     <nav class="menu flex justify-between items-center p-5 bg-gray-800 text-white">
+
         <!-- Logo o Título -->
-        <h1 class="text-xl font-bold">
-            <a href="{{ url('/') }}">Jornadas de Videojuegos</a>
-        </h1>
+
+        @auth
+            <h1 class="text-xl font-bold">
+                <a href="{{ url('/dashboard') }}">Jornadas de Videojuegos</a>
+            </h1>
+        @else
+            <h1 class="text-xl font-bold">
+                <a href="{{ url('/') }}">Jornadas de Videojuegos</a>
+            </h1>
+        @endauth
+
 
         <div>
 

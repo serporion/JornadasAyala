@@ -2,6 +2,9 @@
 
 @section('content')
 
+
+
+
     <style>
 
         .centered-container {
@@ -37,8 +40,7 @@
 
     </style>
 
-    <div class="container centered-container"  style="background-color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; padding: 20px; border-radius: 10px;">
-
+    <div class="container centered-container mt-5"  style="background-color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; padding: 20px; border-radius: 10px;">
 
         @if (session('success'))
             <div class="alert alert-success">
@@ -47,7 +49,7 @@
         @endif
 
         @if ($errors->any())
-                <div class="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded">
+            <div class="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded">
                 <ul>
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -55,6 +57,7 @@
                 </ul>
             </div>
         @endif
+
 
         <h1 style="font-size: 2.5rem">Formulario de Inscripción</h1>
 
@@ -74,21 +77,42 @@
                     <th>Fecha</th>
                     <th>Hora</th>
                     <th>Lugar</th>
-                    <th>Seleccionar</th>
+                    <th>Marcar</th>
+                    <th>V</th>
+                    <th>P</th>
+                    <th>G</th>
+
                 </tr>
                 </thead>
                 <tbody>
+
+
                 @foreach ($eventos as $evento)
                     <tr>
 
                         <td>{{ ucfirst($evento->tipo) }}</td>
                         <td style="max-width: 120px">{{ $evento->nombre }}</td>
-                        <td style="max-width: 650px; font-size: 0.8rem; ">{{ $evento->descripcion }}</td>
+                        <td style="max-width: 550px; font-size: 0.8rem; ">{{ $evento->descripcion }}</td>
                         <td>{{ \Carbon\Carbon::parse($evento->fecha)->format('d M') }}</td>
                         <td>{{ \Carbon\Carbon::parse($evento->hora_inicio)->format('H:i') }}</td>
                         <td>{{ $evento->lugar }}</td>
                         <td>
                             <input type="checkbox" name="eventos[]" value="{{ $evento->id }}">
+                        </td>
+                        <td>
+                            <label>
+                                <input type="radio" name="tipo_inscripcion_{{ $evento->id }}" value="virtual">
+                            </label>
+                        </td>
+                        <td>
+                            <label>
+                                <input type="radio" name="tipo_inscripcion_{{ $evento->id }}" value="presencial">
+                            </label>
+                        </td>
+                        <td>
+                            <label>
+                                <input type="radio" name="tipo_inscripcion_{{ $evento->id }}" value="gratuita">
+                            </label>
                         </td>
                     </tr>
                 @endforeach
@@ -97,21 +121,17 @@
 
             <div style="text-align: center; margin-top: 30px; margin-bottom: 30px">
 
+
+                <div style="margin-top: 20px; font-size: 14px;">
+                    <strong>Leyenda:</strong>
+                    <p><strong>V:</strong> Evento virtual. 10 €</p>
+                    <p><strong>P:</strong> Evento presencial. 20 € </p>
+                    <p><strong>G:</strong> Evento gratuito (exclusivo para alumnos).</p>
+                </div>
+
                 @auth
-                    <h3>Seleccionar tipo de inscripción</h3>
-
-                    <label style="margin-right: 20px;">
-                        <input type="radio" name="tipo_inscripcion" value="virtual" required> Virtual
-                    </label>
-                    <label style="margin-right: 20px;">
-                        <input type="radio" name="tipo_inscripcion" value="presencial"> Presencial
-                    </label>
-                    <label>
-                        <input type="radio" name="tipo_inscripcion" value="gratuita"> Gratuita (Soy alumno)
-                    </label>
-
                     <div>
-                        <button type="submit" class="morado-boton" style="margin-top: 20px;">Inscribirse</button>
+                        <button type="submit" class="morado-boton" style="margin-top: 20px;">Inscríbete a los cursos</button>
                     </div>
                 @else
                     <!-- Mostrar botón Iniciar sesión si NO hay usuario autenticado -->

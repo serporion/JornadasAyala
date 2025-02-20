@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Evento;
 use Illuminate\Foundation\Http\FormRequest;
 
 class EventoRequest extends FormRequest
@@ -14,7 +15,8 @@ class EventoRequest extends FormRequest
     public function authorize()
     {
         // only allow updates if the user is logged in
-        return backpack_auth()->check();
+        //return backpack_auth()->check();
+        return auth()->check() && auth()->user()->role('user');
     }
 
     /**
@@ -45,9 +47,32 @@ class EventoRequest extends FormRequest
     public function attributes()
     {
         return [
-            //
+            'eventos' => 'required|array',
+            'eventos.*' => 'exists:eventos,id',
         ];
     }
+
+    /*
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+
+            //$eventosSeleccionados = $this->input('eventos', []);
+            $eventosSeleccionados = json_decode($this->input('eventos', '[]'), true);
+            $eventos = Evento::whereIn('id', $eventosSeleccionados)->get();
+
+            foreach ($eventos as $evento) {
+                if ($evento->plazas_disponibles <= 0) {
+                    $validator->errors()->add(
+                        "evento_{$evento->id}",
+                        "No hay plazas disponibles para el evento: {$evento->nombre}"
+                    );
+                }
+            }
+        });
+    }
+    */
+
 
     /**
      * Get the validation messages that apply to the request.

@@ -30,7 +30,7 @@ class PayPalService
         return $this->client;
     }
 
-    public function crearPago($monto, $moneda, $descripcion, $pedidoId)
+    public function crearPago($monto, $moneda, $descripcion, $customData)
     {
         $request = new OrdersCreateRequest();
         $request->prefer('return=representation');
@@ -38,17 +38,20 @@ class PayPalService
             'intent' => 'CAPTURE',
             'purchase_units' => [
                 [
-                    'reference_id' => $pedidoId,
+                    'reference_id' => uniqid('pedido_'),
                     'amount' => [
                         'currency_code' => $moneda,
                         'value' => $monto,
                     ],
                     'description' => $descripcion,
+                    'custom_id' => $customData,
                 ]
             ],
             'application_context' => [
-                'return_url' => url("paypal/success?pedidoId={$pedidoId}"),
-                'cancel_url' => url("paypal/cancel?pedidoId={$pedidoId}"),
+               // 'return_url' => url("paypal/success?pedidoId={$pedidoId}"),
+               // 'cancel_url' => url("paypal/cancel?pedidoId={$pedidoId}"),
+                'return_url' => route('pago.exitoso'), // Redirigir aquí luego del éxito
+                'cancel_url' => route('pago.cancelado'), // Redirigir aquí si se cancela el pago
             ]
         ];
 

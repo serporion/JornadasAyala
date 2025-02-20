@@ -26,6 +26,8 @@ class Evento extends Model
         'cupo_maximo',
     ];
 
+
+
     public function ponentes()
     {
         return $this->belongsToMany(Ponente::class, 'eventos_ponentes', 'event_id', 'speaker_id');
@@ -46,6 +48,22 @@ class Evento extends Model
         //return $this->hasManyThrough(Inscripcion::class, InscripcionEvento::class);
         return $this->belongsToMany(Inscripcion::class, 'inscripcion_eventos', 'evento_id', 'inscripcion_id')
             ->withTimestamps();
+    }
+
+    public function tienePlazasDisponibles(): bool
+    {
+        return $this->cupo_maximo > 0;
+    }
+
+    public function restarPlaza(): void
+    {
+        // Verificar si aún hay plazas disponibles antes de restar
+        if (!$this->tienePlazasDisponibles()) {
+            throw new \Exception('No hay plazas disponibles para este evento: ' . $this->nombre);
+        }
+
+        $this->cupo_maximo -= 1;
+        $this->save();
     }
 
 }

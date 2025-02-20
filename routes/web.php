@@ -24,6 +24,8 @@ Route::get('/', function () {
     return view('landing');
 });
 
+
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -91,14 +93,17 @@ Route::get('/paypal/cancel', [PayPalController::class, 'pagoCancelado'])->
 
 
 
+Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
 
-
-//Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
 //Route::post('/inscripcion', [InscripcionController::class, 'store'])->name('inscripcion.store');
 Route::middleware('auth')->group(function () {
-    Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
+    //Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
     Route::post('/inscripcion', [InscripcionController::class, 'store'])->name('inscripcion.store');
     Route::post('/inscripcion/confirmacion', [InscripcionController::class, 'confirmacion'])->name('inscripcion.confirmacion');
 });
+
+Route::post('/inscripcion.gestionarTransaccion', [InscripcionController::class, 'gestionarTransaccion'])
+    ->name('inscripcion.gestionarTransaccion');
+
 
 require __DIR__.'/auth.php';

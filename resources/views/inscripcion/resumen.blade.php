@@ -2,8 +2,24 @@
 
 @section('content')
 
-    <style>
 
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <style>
         .centered-container {
             display: flex;
             justify-content: center;
@@ -34,35 +50,23 @@
         .morado-boton:hover {
             background-color: #5a379a; /* Morado más oscuro al pasar el mouse */
         }
-
     </style>
 
-    @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
 
-    @if ($errors->any())
-        <div class="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
 
     <div class="container centered-container" style="background-color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; padding: 20px; border-radius: 10px; margin-top: 20px">
         <h1 style="font-size: 2.5rem">Resumen de Inscripciones</h1>
         <div style="text-align: right;">
-            <a href="{{ route('inscripcion.index') }}" class="morado-boton">Volver</a>
-        </div>
 
+            <a href="{{ route('inscripcion.index') }}" class="morado-boton"
+               onclick="event.preventDefault(); document.getElementById('volver-form').submit();">
+                Volver
+            </a>
+        </div>
 
         <h2 style="text-align: center; font-size: 1.5rem">Evento(s) Seleccionado(s)</h2>
 
-        <table class="table table-bordered table-padding" >
+        <table class="table table-bordered table-padding">
             <thead>
             <tr>
                 <th>Tipo</th>
@@ -83,28 +87,32 @@
                     <td>{{ \Carbon\Carbon::parse($evento->fecha)->format('d M') }}</td>
                     <td>{{ \Carbon\Carbon::parse($evento->hora_inicio)->format('H:i') }}</td>
                     <td>{{ $evento->lugar }}</td>
-                    <td>{{ $evento->costo > 0 ? '$' . number_format($evento->costo, 2) : 'Gratuito' }}</td>
+                    <td>{{ $evento->costo > 0 ? '€' . number_format($evento->costo, 2) : 'Gratuito' }}</td>
                 </tr>
             @endforeach
             </tbody>
         </table>
 
+
         <div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
             <h3>Coste Total de Inscripción: {{ number_format($totalCoste, 2) }} €</h3>
         </div>
 
-        <form action="{{ route('inscripcion.confirmacion') }}" method="POST" >
+
+        <form action="{{ route('inscripcion.gestionarTransaccion') }}" method="POST">
             @csrf
             <input type="hidden" name="eventos" value="{{ json_encode($eventos->pluck('id')) }}">
-            <input type="hidden" name="tipo_inscripcion" value="{{ $tipo_inscripcion }}">
+            <input type="hidden" name="detalle" value="{{ json_encode($detalle) }}">
+            <input type="hidden" name="totalCoste" value="{{ $totalCoste }}">
+
+            @foreach ($detalle as $eventoId => $item)
+                <input type="hidden" name="tipo_inscripcion_{{ $eventoId }}" value="{{ $item['tipo_inscripcion'] }}">
+            @endforeach
 
             <div style="text-align: center;">
                 <button type="submit" class="morado-boton">Confirmar Inscripción</button>
             </div>
-
         </form>
-
     </div>
 
 @endsection
-

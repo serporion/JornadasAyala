@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+
+    protected $redirectTo = '/dashboard';
+
     public function register(Request $request)
     {
         $validatedData = $request->validate([
@@ -46,7 +49,8 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer', //Se puede especificar el tipo de token.
-        ]);
+        ])->header('Location', $this->redirectTo); //Fuerzo el redirectTo porque si no hacía caso a la primera ruta
+                                                        // que se encontra en routes.
     }
 
     public function logout(Request $request)

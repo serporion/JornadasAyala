@@ -234,4 +234,89 @@ class Mail
             return false;
         }
     }
+
+    /**
+     * Enviar correo con detalles de las inscripciones realizadas.
+     *
+     * @param User $user              Usuario al que se enviará el correo.
+     * @param array $eventosSeleccionados  Lista de los eventos seleccionados por el usuario.
+     * @return bool
+     */
+    public function sendInscriptionDetails(User $user, array $eventosSeleccionados): bool
+    {
+        $mail = new PHPMailer(true);
+
+        try {
+            // Configuración del servidor SMTP
+            $mail->isSMTP();
+            $mail->Host = config('mail.mailers.smtp.host');
+            $mail->SMTPAuth = true;
+            $mail->Port = config('mail.mailers.smtp.port');
+            $mail->Username = config('mail.mailers.smtp.username');
+            $mail->Password = config('mail.mailers.smtp.password');
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+
+            // Opciones SSL personalizadas
+            $mail->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ],
+            ];
+
+            // Configuración del remitente y destinatario
+            $mail->setFrom(config('mail.from.address'), config('mail.from.name')); // Remitente dinámico desde config
+            $mail->addAddress($user->email, $user->name); // Destinatario
+
+            // Maquetar el contenido HTML del correo
+            $eventosHtml = '';
+            foreach ($eventosSeleccionados as $evento) {
+                // Obtener datos de cada evento (recuerda que `evento` puede ser un ID, necesitarás buscar la información real)
+                $eventData = \App\Models\Evento::find($evento);
+
+                if ($eventData) {
+                    $eventosHtml .= "
+                  <tr>
+                    <td>{$eventData->nombre}</td>
+                    <td>{$eventData->fecha}</td>
+                    <td>{$eventData->lugar}</td>
+                  </tr>
+                ";
+                }
+            }
+
+            // Crear el cuerpo del correo
+            $mail->isHTML(true);
+            $mail->Subject = 'Detalles de tus Inscripciones';
+            $mail->Body = "
+            <p>Hola, {$user->name}:</p>
+            <p>Gracias por completar tu inscripción. Aquí están los detalles de los eventos registrados:</p>
+            <table style='border: 1px solid #ddd; border-collapse: collapse; width: 100%;'>
+                <thead style='background-color: #f2f2f2;'>
+                    <tr>
+                        <th style='border: 1px solid #ddd; padding: 8px;'>Evento</th>
+                        <th style='border: 1px solid #ddd; padding: 8px;'>Fecha</th>
+                        <th style='border: 1px solid #ddd; padding: 8px;'>Lugar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {$eventosHtml}
+                </tbody>
+            </table>
+            <p>En caso de cualquier duda, no dudes en contactarnos.</p>
+            <br/>
+            <p>Saludos,<br/>
+            Equipo Jornadas Ayala</p>
+        ";
+
+            // Enviar correo
+            $mail->send();
+
+            return true; // Éxito
+        } catch (Exception $e) {
+            Log::error("Error al enviar los detalles de inscripción: " . $mail->ErrorInfo);
+            return false; // Error en el envío
+        }
+    }
 }
