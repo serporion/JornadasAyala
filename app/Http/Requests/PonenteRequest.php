@@ -25,9 +25,13 @@ class PonenteRequest extends FormRequest
     public function rules()
     {
         return [
-            // 'name' => 'required|min:5|max:255'
+            'nombre' => 'required|string|max:255',
+            'fotografia' => 'nullable|string|max:255',
+            'area_experiencia' => 'nullable|string|max:255',
+            'red_social' => 'nullable|string|max:255',
         ];
     }
+
 
     /**
      * Get the validation attributes that apply to the request.
@@ -49,7 +53,13 @@ class PonenteRequest extends FormRequest
     public function messages()
     {
         return [
-            //
+            'nombre.required' => 'El nombre es obligatorio',
+            'nombre.string' => 'El nombre debe ser texto',
+            'nombre.max' => 'El nombre no puede superar los 255 caracteres',
+            'fotografia.max' => 'La ruta de la fotografía no puede superar los 255 caracteres',
+            'area_experiencia.max' => 'El área de experiencia no puede superar los 255 caracteres',
+            'red_social.max' => 'La red social no puede superar los 255 caracteres'
         ];
     }
+
 }

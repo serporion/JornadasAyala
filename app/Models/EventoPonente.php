@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+//use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class EventoPonente extends Model
+class EventoPonente extends Pivot
 {
     use CrudTrait;
     use HasFactory;
@@ -19,8 +20,9 @@ class EventoPonente extends Model
         return $this->belongsTo(Evento::class, 'event_id');
     }
 
-    public function ponente()
+    public function ponentes()
     {
-        return $this->belongsTo(Ponente::class, 'speaker_id');
+        return $this->belongsToMany(Ponente::class, 'eventos_ponentes', 'event_id', 'speaker_id')
+            ->using(EventoPonente::class);
     }
 }

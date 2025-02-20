@@ -56,22 +56,23 @@ Route::get('/test-mail', function () {
 */
 
 Route::middleware('guest')->group(function () {
-    // Ruta para mostrar la página "Olvidé mi Contraseña"
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->
     name('password.request');
 
-    // Ruta para enviar el link de contraseña al correo
+
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->
     name('password.email');
 
-    // Página para reiniciar la contraseña
+
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->
     name('password.reset');
 
-    // Ruta para almacenar la nueva contraseña
+
     Route::post('reset-password', [NewPasswordController::class, 'store'])->
     name('password.update');
 });
+
 
 Route::get( '/verify-email/{id}/{hash}', [VerifyEmailController::class, 'verify'])->
 name('verification.verify');
@@ -92,7 +93,12 @@ Route::get('/paypal/cancel', [PayPalController::class, 'pagoCancelado'])->
 
 
 
-Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
-Route::post('/inscripcion', [InscripcionController::class, 'store'])->name('inscripcion.store');
+//Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
+//Route::post('/inscripcion', [InscripcionController::class, 'store'])->name('inscripcion.store');
+Route::middleware('auth')->group(function () {
+    Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
+    Route::post('/inscripcion', [InscripcionController::class, 'store'])->name('inscripcion.store');
+    Route::post('/inscripcion/confirmacion', [InscripcionController::class, 'confirmacion'])->name('inscripcion.confirmacion');
+});
 
 require __DIR__.'/auth.php';

@@ -25,9 +25,11 @@ class TipoInscripcionRequest extends FormRequest
     public function rules()
     {
         return [
-            // 'name' => 'required|min:5|max:255'
+            'nombre' => 'required|string|max:50',
+            'precio' => 'required|numeric|min:0',
         ];
     }
+
 
     /**
      * Get the validation attributes that apply to the request.
@@ -49,7 +51,13 @@ class TipoInscripcionRequest extends FormRequest
     public function messages()
     {
         return [
-            //
+            'nombre.required' => 'El nombre es obligatorio',
+            'nombre.string' => 'El nombre debe ser texto',
+            'nombre.max' => 'El nombre no puede superar los 50 caracteres',
+            'precio.required' => 'El precio es obligatorio',
+            'precio.numeric' => 'El precio debe ser un número',
+            'precio.min' => 'El precio no puede ser negativo'
         ];
     }
+
 }

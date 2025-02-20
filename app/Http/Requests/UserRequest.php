@@ -25,9 +25,15 @@ class UserRequest extends FormRequest
     public function rules()
     {
         return [
-            // 'name' => 'required|min:5|max:255'
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $this->id,
+            'password' => 'required|min:8|confirmed',
+            'role_id' => 'required|exists:roles,id',
         ];
     }
+
+
+
 
     /**
      * Get the validation attributes that apply to the request.
@@ -49,7 +55,17 @@ class UserRequest extends FormRequest
     public function messages()
     {
         return [
-            //
+            'name.required' => 'El nombre es obligatorio',
+            'name.string' => 'El nombre debe ser texto',
+            'name.max' => 'El nombre no puede superar los 255 caracteres',
+            'email.required' => 'El email es obligatorio',
+            'email.email' => 'El formato del email no es válido',
+            'email.unique' => 'Este email ya está registrado',
+            'password.required' => 'La contraseña es obligatoria',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres',
+            'password.confirmed' => 'Las contraseñas no coinciden',
+            'role_id.required' => 'El rol es obligatorio',
+            'role_id.exists' => 'El rol seleccionado no existe'
         ];
     }
 }

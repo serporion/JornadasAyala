@@ -25,9 +25,11 @@ class EventoPonenteRequest extends FormRequest
     public function rules()
     {
         return [
-            // 'name' => 'required|min:5|max:255'
+            'event_id' => 'required|exists:eventos,id',
+            'speaker_id' => 'required|exists:ponentes,id'
         ];
     }
+
 
     /**
      * Get the validation attributes that apply to the request.
@@ -49,7 +51,11 @@ class EventoPonenteRequest extends FormRequest
     public function messages()
     {
         return [
-            //
+            'event_id.required' => 'El evento es obligatorio',
+            'event_id.exists' => 'El evento seleccionado no existe',
+            'speaker_id.required' => 'El ponente es obligatorio',
+            'speaker_id.exists' => 'El ponente seleccionado no existe'
         ];
     }
+
 }

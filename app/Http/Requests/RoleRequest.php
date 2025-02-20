@@ -25,9 +25,12 @@ class RoleRequest extends FormRequest
     public function rules()
     {
         return [
-            // 'name' => 'required|min:5|max:255'
+            'nombre' => 'required|string|max:255',
+            'email' => 'required|email|unique:alumnos,email,' . $this->id,
+            'dni' => 'required|string|max:20|unique:alumnos,dni,' . $this->id,
         ];
     }
+
 
     /**
      * Get the validation attributes that apply to the request.
