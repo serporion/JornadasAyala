@@ -24,6 +24,7 @@ class Evento extends Model
         'duracion',
         'lugar',
         'cupo_maximo',
+        'ponenteId',
     ];
 
 
@@ -57,7 +58,7 @@ class Evento extends Model
 
     public function restarPlaza(): void
     {
-        // Verificar si aún hay plazas disponibles antes de restar
+        // Volver a verificar si aún hay plazas disponibles antes de restar
         if (!$this->tienePlazasDisponibles()) {
             throw new \Exception('No hay plazas disponibles para este evento: ' . $this->nombre);
         }

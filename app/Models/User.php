@@ -25,10 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role_id',
-        'confirmado',
         'token',
-        'tipo_inscripcion',
-        'es_alumno',
     ];
 
     protected $table = 'users';
@@ -51,7 +48,6 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed','confirmado' => 'boolean',
-        'es_alumno' => 'boolean',
     ];
 
     public function role()

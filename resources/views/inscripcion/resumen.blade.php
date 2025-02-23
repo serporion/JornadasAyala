@@ -58,10 +58,7 @@
         <h1 style="font-size: 2.5rem">Resumen de Inscripciones</h1>
         <div style="text-align: right;">
 
-            <a href="{{ route('inscripcion.index') }}" class="morado-boton"
-               onclick="event.preventDefault(); document.getElementById('volver-form').submit();">
-                Volver
-            </a>
+            <a href="{{ route('inscripcion.index') }}" class="morado-boton" style="margin-top: 20px; text-decoration: none;">Volver</a>
         </div>
 
         <h2 style="text-align: center; font-size: 1.5rem">Evento(s) Seleccionado(s)</h2>
@@ -99,7 +96,7 @@
         </div>
 
 
-        <form action="{{ route('inscripcion.gestionarTransaccion') }}" method="POST">
+        <form action="{{ route('inscripcion/iniciarProcesoPago') }}" method="POST">
             @csrf
             <input type="hidden" name="eventos" value="{{ json_encode($eventos->pluck('id')) }}">
             <input type="hidden" name="detalle" value="{{ json_encode($detalle) }}">

@@ -13,7 +13,7 @@
         <!-- Navegación -->
         <nav class="menu flex justify-center mt-8 space-x-4">
             <a href="#programa">Programa</a>
-            <a href="#ponentes">Ponentes</a>
+            <a href="{{ route('ponentes.index') }}">Ponentes</a>
             <a href="{{ route('inscripcion.index') }}">Inscripción</a>
         </nav>
         <div class="mt-8 flex justify-center">

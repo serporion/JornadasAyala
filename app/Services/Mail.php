@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Evento;
 use App\Models\User;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -10,7 +11,10 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
+ * Clase poco optimizada y muy redundante. Arreglar.
+ *
  * Clase utilizada para el envío de correos usando PHPMailer.
+ *
  */
 class Mail
 {
@@ -180,7 +184,14 @@ class Mail
         }
     }
 
-
+    /**
+     * Envía un correo electrónico para el restablecimiento de contraseña al usuario especificado.
+     *
+     * @param User $user El usuario que solicita el restablecimiento de contraseña.
+     * @param string $token El token único utilizado para generar el enlace de restablecimiento de contraseña.
+     *
+     * @return bool Retorna verdadero si el correo se envía correctamente, falso en caso contrario.
+     */
     public function sendPasswordResetEmail(User $user, string $token)
     {
         $mail = new PHPMailer(true);
@@ -238,12 +249,15 @@ class Mail
     /**
      * Enviar correo con detalles de las inscripciones realizadas.
      *
-     * @param User $user              Usuario al que se enviará el correo.
+     * @param User $user Usuario al que se enviará el correo.
      * @param array $eventosSeleccionados  Lista de los eventos seleccionados por el usuario.
      * @return bool
      */
-    public function sendInscriptionDetails(User $user, array $eventosSeleccionados): bool
+    public function sendInscriptionDetails($detalleJson, $total): bool
     {
+
+        $user = auth()->user(); // Usuario autenticado
+
         $mail = new PHPMailer(true);
 
         try {
@@ -265,58 +279,53 @@ class Mail
                 ],
             ];
 
-            // Configuración del remitente y destinatario
-            $mail->setFrom(config('mail.from.address'), config('mail.from.name')); // Remitente dinámico desde config
+            $mail->setFrom(config('mail.from.address'), config('mail.from.name'));
             $mail->addAddress($user->email, $user->name); // Destinatario
 
-            // Maquetar el contenido HTML del correo
-            $eventosHtml = '';
-            foreach ($eventosSeleccionados as $evento) {
-                // Obtener datos de cada evento (recuerda que `evento` puede ser un ID, necesitarás buscar la información real)
-                $eventData = \App\Models\Evento::find($evento);
 
-                if ($eventData) {
-                    $eventosHtml .= "
-                  <tr>
-                    <td>{$eventData->nombre}</td>
-                    <td>{$eventData->fecha}</td>
-                    <td>{$eventData->lugar}</td>
-                  </tr>
-                ";
-                }
+            // Decodifico el JSON para obtener datos sobre los eventos
+            $detalles = json_decode($detalleJson, true);
+
+            $eventosIds = array_column($detalles, 'eventoId');
+
+            // Uso esta vez la propia tabla para sacar lo datos. Podría haber usado el Json.
+            $eventos = Evento::whereIn('id', $eventosIds)->get();
+
+            // Inicializar coste total
+            // $costeTotal = 0;
+
+            // Maquetar el contenido HTML del correo
+            $body = "<h1>Confirmación de Inscripción</h1>";
+            $body .= "<p>Gracias por tu inscripción. Aquí tienes los detalles de los eventos:</p>";
+            $body .= "<ul>";
+
+            foreach ($eventos as $evento) {
+                //$costeTotal += $evento->coste; // Sumar el coste de cada evento al total
+
+                $body .= "<li><strong>Evento:</strong> {$evento->nombre} <br>";
+                $body .= "<strong>Fecha y Hora:</strong> {$evento->fecha} - {$evento->hora}<br>";
+                $body .= "<strong>Lugar:</strong> {$evento->lugar} <br>";
+                //$body .= "<strong>Precio:</strong> {$evento->coste} €</li><br>";
             }
+
+            $body .= "</ul>";
+            $body .= "<p><strong>Coste Total:</strong> {$total} €</p>";
+            $body .= "<p>Esperamos verte allí. ¡Gracias por inscribirte!</p>";
 
             // Crear el cuerpo del correo
             $mail->isHTML(true);
             $mail->Subject = 'Detalles de tus Inscripciones';
-            $mail->Body = "
-            <p>Hola, {$user->name}:</p>
-            <p>Gracias por completar tu inscripción. Aquí están los detalles de los eventos registrados:</p>
-            <table style='border: 1px solid #ddd; border-collapse: collapse; width: 100%;'>
-                <thead style='background-color: #f2f2f2;'>
-                    <tr>
-                        <th style='border: 1px solid #ddd; padding: 8px;'>Evento</th>
-                        <th style='border: 1px solid #ddd; padding: 8px;'>Fecha</th>
-                        <th style='border: 1px solid #ddd; padding: 8px;'>Lugar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {$eventosHtml}
-                </tbody>
-            </table>
-            <p>En caso de cualquier duda, no dudes en contactarnos.</p>
-            <br/>
-            <p>Saludos,<br/>
-            Equipo Jornadas Ayala</p>
-        ";
+            $mail->Body = $body;
+
 
             // Enviar correo
             $mail->send();
 
-            return true; // Éxito
+            return true;
         } catch (Exception $e) {
             Log::error("Error al enviar los detalles de inscripción: " . $mail->ErrorInfo);
-            return false; // Error en el envío
+            return false;
         }
     }
+
 }

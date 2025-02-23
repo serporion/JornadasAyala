@@ -6,10 +6,10 @@
 
 <div class="container mx-auto py-12">
     <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
-        <h1 class="text-2xl font-bold text-center mb-6">{{ __('Verify Your Email Address') }}</h1>
+        <h1 class="text-2xl font-bold text-center mb-6">{{ __('Verifica tu email') }}</h1>
 
         <div class="mb-4 text-sm text-gray-600">
-            {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
+            {{ __('Ahora mismo está logueado. Debes estarlo antes de confirmar tu password mediante el enlace que se te ha enviado a tu correo electrónico. Una vez hecho esto, ya podrás acceder a tu area personal.') }}
         </div>
 
         @if (session('status') == 'verification-link-sent')
@@ -23,7 +23,7 @@
             <form method="POST" action="{{ route('verification.send') }}">
                 @csrf
                 <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
-                    {{ __('Resend Verification Email') }}
+                    {{ __('Reenviar Email de Confirmación') }}
                 </button>
             </form>
 

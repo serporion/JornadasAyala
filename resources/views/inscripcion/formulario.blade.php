@@ -21,21 +21,21 @@
         }
 
         .table-padding th {
-            padding: 10px; /* Opcional */
+            padding: 10px;
         }
 
         .morado-boton {
-            background-color: #6f42c1; /* Color morado */
-            color: white; /* Texto en blanco */
-            border: none; /* Quitar bordes predeterminados */
-            padding: 10px 20px; /* Espaciado interno */
-            border-radius: 5px; /* Bordes ligeramente redondeados */
-            font-size: 1rem; /* Tamaño del texto */
-            cursor: pointer; /* Cambiar cursor al pasar sobre el botón */
+            background-color: #6f42c1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
         }
 
         .morado-boton:hover {
-            background-color: #5a379a; /* Morado más oscuro al pasar el mouse */
+            background-color: #5a379a;
         }
 
     </style>
@@ -122,7 +122,7 @@
             <div style="text-align: center; margin-top: 30px; margin-bottom: 30px">
 
 
-                <div style="margin-top: 20px; font-size: 14px;">
+                <div style="margin-top: 20px; font-size: 14px; margin-bottom: 30px">
                     <strong>Leyenda:</strong>
                     <p><strong>V:</strong> Evento virtual. 10 €</p>
                     <p><strong>P:</strong> Evento presencial. 20 € </p>
@@ -131,12 +131,12 @@
 
                 @auth
                     <div>
-                        <button type="submit" class="morado-boton" style="margin-top: 20px;">Inscríbete a los cursos</button>
+                        <button type="submit" class="morado-boton">Inscríbete a los cursos</button>
                     </div>
                 @else
                     <!-- Mostrar botón Iniciar sesión si NO hay usuario autenticado -->
                     <div>
-                        <a href="{{ route('login') }}" class="morado-boton" style="margin-top: 50px; text-decoration: none;">Inicia sesión</a>
+                        <a href="{{ route('login') }}" class="morado-boton; text-decoration: none;">Inicia sesión</a>
                     </div>
                  @endauth
 

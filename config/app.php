@@ -185,4 +185,16 @@ return [
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 
+    'BASE_URLPAYPAL' => "http://localhost:8000/",
+    'SECRET_KEY' => 'h[_EG)zQfzYK--0$T1C$qMhaJ$nP9L$RIB/k4bB!NEW10P=p@',
+    'PAYPAL_CLIENT_ID' => 'AfDVyRe2k5wDeleSAAm0CBz8CzRJe3OReGAbKwCiOXE7Dl8phmSaxN0dJdkqfS8MBJJfTHFDR-HiwNbq',
+    'PAYPAL_SECRET' => 'ECNbO1FJzVoNI5_mRjpS1cw730eGCwDp2h5RuP9e-XpC8Bzj5rPutNoQ5HO7AgBqShRfHzpBo0PxKlIZ',
+    'PAYPAL_MODE' => 'sandbox',
+
+
+
+# sb-bvzzq37658932@personal.example.com Usuario
+# Jd826a#&
+
+
 ];

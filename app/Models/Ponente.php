@@ -22,8 +22,11 @@ class Ponente extends Model
         'red_social',
     ];
 
+
     public function eventos()
     {
-        return $this->belongsToMany(Evento::class, 'eventos_ponentes', 'speaker_id', 'event_id');
+        //Muchos a muchos. No lo necesito.
+        //return $this->belongsToMany(Evento::class, 'eventos_ponentes', 'speaker_id', 'event_id');
+        return $this->hasMany(Evento::class); // Asume que 'eventos' está relacionado como hasMany.
     }
 }

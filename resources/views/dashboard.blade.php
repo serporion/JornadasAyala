@@ -12,6 +12,23 @@
 
 @section('content') <!-- Inicia la sección de contenido -->
 
+@if (session('success'))
+    <div class="max-w-4xl mx-auto mt-4">
+        <div class="bg-green-500 text-white font-bold py-2 px-4 rounded">
+            {{ session('success') }}
+        </div>
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="max-w-4xl mx-auto mt-4">
+        <div class="bg-red-500 text-white font-bold py-2 px-4 rounded">
+            {{ session('error') }}
+        </div>
+    </div>
+@endif
+
+
 <!-- Contenido principal del dashboard -->
 <nav class="menu flex justify-center mt-8 space-x-4">
     <a href="#programa" class="text-blue-500 hover:text-blue-700 transition">Programa</a>

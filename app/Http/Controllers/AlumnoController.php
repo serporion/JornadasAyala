@@ -5,13 +5,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Alumno;
 use App\Models\Inscripcion;
-use App\Models\Evento;
 use Illuminate\Http\Request;
 
 class AlumnoController
 {
-
-
+    //Al final valido en InscripcionController. Metodo para borrar.
     public function storeInscripcion(Request $request)
     {
         $user = $request->user(); // Usuario autenticado

@@ -105,5 +105,10 @@ CREATE TABLE `alumnos` (
     `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+ALTER TABLE eventos
+ADD COLUMN ponenteId BIGINT UNSIGNED AFTER cupo_maximo, 
+ADD CONSTRAINT fk_eventos_ponente 
+FOREIGN KEY (ponenteId) REFERENCES ponentes(id)
+ON DELETE CASCADE; 
 
 #INSERT INTO `alumnos` (`nombre`, `email`, `dni`) VALUES ('Orion Tillman', 'ewald79@example.net', '12345678A'), ('Nicolette Marvin', 'asa07@example.org', '87654321B'),('Kailee Haag', 'byost@example.com', '11223344C');

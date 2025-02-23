@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\PonenteController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 //use Illuminate\Support\Facades\Mail; Symphony
-use App\Http\Controllers\Auth\VerifyEmailController;
+//use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\InscripcionController;
+use Illuminate\Support\Facades\Storage;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -76,34 +79,53 @@ Route::middleware('guest')->group(function () {
 });
 
 
-Route::get( '/verify-email/{id}/{hash}', [VerifyEmailController::class, 'verify'])->
-name('verification.verify');
-
-
-
-
-Route::get('/paypal/iniciar-pago/{pedidoId}', [PayPalController::class, 'iniciarPago'])->
-    name('paypal.iniciarPago');
-
-Route::get('/paypal/success', [PayPalController::class, 'pagoExitoso'])->
-    name('paypal.pagoExitoso');
-
-Route::get('/paypal/cancel', [PayPalController::class, 'pagoCancelado'])->
-    name('paypal.pagoCancelado');
-
-
 
 Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
 
-//Route::post('/inscripcion', [InscripcionController::class, 'store'])->name('inscripcion.store');
+
 Route::middleware('auth')->group(function () {
-    //Route::get('/inscripcion', [InscripcionController::class, 'index'])->name('inscripcion.index');
+
     Route::post('/inscripcion', [InscripcionController::class, 'store'])->name('inscripcion.store');
     Route::post('/inscripcion/confirmacion', [InscripcionController::class, 'confirmacion'])->name('inscripcion.confirmacion');
 });
 
+/*
 Route::post('/inscripcion.gestionarTransaccion', [InscripcionController::class, 'gestionarTransaccion'])
     ->name('inscripcion.gestionarTransaccion');
+*/
+
+
+
+
+Route::post('/inscripcion/iniciarProcesoPago', [InscripcionController::class, 'iniciarProcesoPago'])
+    ->name('inscripcion/iniciarProcesoPago');
+
+/*
+Route::get('/paypal/iniciar-pago/{pedidoId}', [PayPalController::class, 'iniciarPago'])->
+name('paypal.iniciarPago');
+*/
+
+Route::get('/paypal/iniciar-pago', [PayPalController::class, 'iniciarPago'])->
+name('paypal.iniciarPago');
+
+Route::get('/PayPal/pagoExitoso', [PayPalController::class, 'pagoExitoso'])->
+name('PayPal.pagoExitoso');
+
+
+Route::get('/paypal/cancel', [PayPalController::class, 'pagoCancelado'])->
+name('paypal.pagoCancelado');
+
+
+Route::get('ponentes', [PonenteController::class, 'index'])->name('ponentes.index');
+
+/*
+Route::get('/imagen/{filename}', [PonenteController::class, 'mostrarImagen'])->
+name('imagen.ponente');
+*/
+
+Route::get('/mostrar-imagen/{filename}', [PonenteController::class, 'mostrarImagen'])
+    ->where('filename', '.*')
+    ->name('mostrar-imagen');
 
 
 require __DIR__.'/auth.php';

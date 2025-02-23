@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\InscripcionRequest;
+use App\Models\Alumno;
 use App\Models\Inscripcion;
 use App\Models\TipoInscripcion;
+use App\Services\Mail;
 use Illuminate\Http\Request;
 use App\Models\Evento;
 use Illuminate\Support\Facades\DB;
@@ -30,8 +32,8 @@ class InscripcionController extends Controller
 
     public function store(InscripcionRequest $request)
     {
-        $eventosSeleccionados = $request->input('eventos'); // IDs de los eventos seleccionados
-        $detalleInscripcion = []; // Para almacenar el detalle de inscripción
+        $eventosSeleccionados = $request->input('eventos');
+        $detalleInscripcion = [];
         $user = auth()->user(); // Usuario autenticado
 
 
@@ -64,7 +66,6 @@ class InscripcionController extends Controller
                 ])->withInput();
             }
 
-            // Procesar el costo según el tipo inscripción
             $costoEvento = ($tipoInscripcion === 'gratuita') ? 0 : (($tipoInscripcion === 'virtual') ? 10 : 20);
 
             $detalleInscripcion[] = [
@@ -73,13 +74,12 @@ class InscripcionController extends Controller
                 'costo' => $costoEvento,
             ];
 
-            // Agregar datos adicionales del evento al detalle (si es necesario)
-            $evento->costo = $costoEvento; // Añadimos costo al modelo para usarlo en la vista
+            $evento->costo = $costoEvento;
         }
 
-        $totalCoste = collect($detalleInscripcion)->sum('costo'); // Sumar costos
+        $totalCoste = collect($detalleInscripcion)->sum('costo');
 
-        // Redirigir al resumen incluyendo los eventos seleccionados
+        // Redirigimos al resumen incluyendo los eventos seleccionados
         return view('inscripcion.resumen', [
             'detalle' => $detalleInscripcion,
             'totalCoste' => $totalCoste,
@@ -87,46 +87,104 @@ class InscripcionController extends Controller
         ]);
     }
 
-    public function gestionarTransaccion(Request $request)
+    public function iniciarProcesoPago(Request $request)
     {
-        $user = auth()->user(); // Usuario autenticado
-        $eventosSeleccionados = json_decode($request->input('eventos'), true);
-        $tipoInscripcionNombre = $request->input('tipo_inscripcion_0');
+        $user = auth()->user();
+
+        try {
+
+            $eventosSeleccionados = json_decode($request->input('eventos'), true);
+
+            $event = json_decode($request->input('detalle'), true);
+
+            foreach ($event as $evento) {
+                if($evento['tipo_inscripcion'] === 'Gratuita') {
+                    $alumno = Alumno::where('email', $user->email)->first();
+                    if (!$alumno) {
+                        return redirect()->route('dashboard')->with('error', 'No puedes inscribirte como alumno porque no estás registrado como tal.');
+                    }
+                }
+            }
+
+            // Valido plazas
+            $verificacionExitosa = $this->verificarPlazas($eventosSeleccionados);
+
+            if (!$verificacionExitosa) {
+                throw new \Exception('Error verificando las plazas existentes.');
+            }
+
+            $importeTotal = $request->input("totalCoste");
+
+            $detalleJson = $request->input('detalle');
+
+            if (!is_string($detalleJson) || json_decode($detalleJson, true) === null) {
+                throw new \Exception('El campo detalle no contiene un JSON válido.');
+            }
+
+            $detalles = json_decode($detalleJson, true);
 
 
-        // BUSCAR EL ID DEL TIPO DE INSCRIPCIÓN
-        $tipoInscripcionId = TipoInscripcion::where('nombre', $tipoInscripcionNombre)->value('id');
+            // Usa referencia (&) para modificar el detalle en el array original
+            foreach ($detalles as $index => &$detalle) {
+                $eventoId = $eventosSeleccionados[$index] ?? null;
+                if ($eventoId) {
+                    $detalle['eventoId'] = $eventoId;
+                }
+            }
 
+            $detalleCompletoJson = json_encode($detalles);
 
-        // Transacción de Control
+            $paypalController = resolve(PayPalController::class);
+            return $paypalController->iniciarPago($importeTotal, $detalleCompletoJson);
+
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard')->with('error', 'Error procesando el pago: ' . $e->getMessage());
+        }
+    }
+
+    public function gestionarTransaccion($detalleJson, $total)
+    {
 
         DB::beginTransaction();
 
         try {
 
-            if (!$tipoInscripcionId) {
-                throw new \Exception("No se encontró un tipo de inscripción con el nombre: $tipoInscripcionNombre");
+            //Vuelvo a validar por si se devuelve algo incorrecto.
+            if (!is_string($detalleJson) || json_decode($detalleJson, true) === null) {
+                throw new \Exception('JSON no válido.');
             }
 
-            // 1. Validar y restar plazas
-            $verificacionExitosa = $this->verificarYRestarPlazas($user, $eventosSeleccionados);
-            if (!$verificacionExitosa) {
-                throw new \Exception('Error verificando o restando plazas.');
-            }
-
-            // 2. Realizar las inscripciones
-            $confirmacionExitosa = $this->confirmacion($user, $eventosSeleccionados, $tipoInscripcionId);
+            //Realizamos las inscripciones
+            $confirmacionExitosa = $this->confirmacion($detalleJson);
             if (!$confirmacionExitosa) {
-                throw new \Exception('Error durante las inscripciones.');
+                throw new \Exception('Error durante la grabación de las inscripciones.');
             }
 
+            $detalles = json_decode($detalleJson, true);
 
-            // 3. Procesar el pago
+            $eventosIds = [];
 
-            $paypalController = resolve(PayPalController::class);
-            $paypalController->iniciarPago($eventosSeleccionados);
+            foreach ($detalles as $index => $detalle) {
+                if (isset($detalle['eventoId'])) {
+                    $eventosIds[] = $detalle['eventoId']; // Almacenar los IDs de eventos
+                }
+            }
 
-            return null;
+            $eventos = Evento::whereIn('id', $eventosIds)->get();
+
+            foreach ($eventos as $evento) {
+                $evento->restarPlaza('cupo_maximo');
+            }
+
+            DB::commit();
+
+            $mailService = resolve(Mail::class);
+            $correoEnviado = $mailService->sendInscriptionDetails($detalleJson, $total);
+
+            if (!$correoEnviado) {
+                throw new \Exception('No se pudo enviar el correo con los detalles.');
+            }
+
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -137,34 +195,41 @@ class InscripcionController extends Controller
     }
 
 
-    private function confirmacion($user, $eventosSeleccionados, $tipoInscripcionId)
+    private function confirmacion($detalleJson)
     {
-        foreach ($eventosSeleccionados as $eventoId) {
-            //Creamos la inscripción en las tablas correspondientes.
-            //En esta variable grabamos la inscripcion realizada y luego recuperamos su id.
 
-            $evento = Evento::findOrFail($eventoId);
+        $user = auth()->user();
 
-            $inscripcion = Inscripcion::create([
-                'user_id' => $user->id,
-                'tipo_inscripcion_id' => $tipoInscripcionId,
-                'fecha_inscripcion' => now()
-            ]);
-
-            // Crear el registro en inscripcion_eventos
-            DB::table('inscripcion_eventos')->insert([
-                'inscripcion_id' => $inscripcion->id,
-                'evento_id' => $evento->id,
-            ]);
+        $detalle = json_decode($detalleJson, true);
 
 
+        foreach ($detalle as $key => $evento) {
+            if (is_array($evento) && isset($evento['eventoId'])) {
+
+                $tipoInscripcionId = TipoInscripcion::where('nombre', $evento['tipo_inscripcion'])->value('id');
+
+                //Crear el registro en inscripcion
+                $inscripcion = Inscripcion::create([
+                    'user_id' => $user->id,
+                    'tipo_inscripcion_id' => $tipoInscripcionId,
+                    'fecha_inscripcion' => now()
+                ]);
+
+                $inscripcionId = $inscripcion->id;
+
+                // Crear el registro en inscripcion_eventos
+                DB::table('inscripcion_eventos')->insert([
+                    'inscripcion_id' => $inscripcionId,
+                    'evento_id' => $evento['eventoId'],
+                ]);
+
+            }
         }
 
         return true;
     }
 
-
-    private function verificarYRestarPlazas($user, $eventosSeleccionados)
+    private function verificarPlazas($eventosSeleccionados)
     {
         $eventos = Evento::whereIn('id', $eventosSeleccionados)->get();
 
@@ -174,13 +239,11 @@ class InscripcionController extends Controller
 
         foreach ($eventos as $evento) {
             if ($evento->cupo_maximo <= 0) {
-                return false; // Error: No hay plazas disponibles
+                return false; // No hay plazas disponibles
             }
-            // Restar plaza
-            $evento->restarPlaza('cupo_maximo');
-        }
 
-        return true; // Todo válido
+        }
+        return true;
     }
 
 

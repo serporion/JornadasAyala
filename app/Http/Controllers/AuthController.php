@@ -12,6 +12,9 @@ class AuthController extends Controller
 
     protected $redirectTo = '/dashboard';
 
+    //Conflicto con Breeze. Modificar en RegisteredUserController.
+
+    /*
     public function register(Request $request)
     {
         $validatedData = $request->validate([
@@ -33,7 +36,7 @@ class AuthController extends Controller
             'token_type' => 'Bearer',
         ]);
     }
-
+    */
     public function login(Request $request)
     {
         //User::where('email', $request->email)->first() y Hash::check(). Otra forma de hacerlo
@@ -49,13 +52,13 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer', //Se puede especificar el tipo de token.
-        ])->header('Location', $this->redirectTo); //Fuerzo el redirectTo porque si no hacía caso a la primera ruta
-                                                        // que se encontra en routes.
+        ])->header('Location', $this->redirectTo); //Fuerzo el redirectTo porque. Si no lo hago hace caso a
+                                                        // la primera ruta que se encuentra en routes.
     }
 
     public function logout(Request $request)
     {
-        //$request->user()->tokens()->delete(); Cerrará la sesión en todos los dispositivos. Cuidado.
+        //$request->user()->tokens()->delete(); Cerrará la sesión en todos los dispositivos. Cuidado!!
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);

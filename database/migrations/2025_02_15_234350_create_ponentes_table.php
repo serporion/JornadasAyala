@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+
         Schema::create('ponentes', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 255)->notNull();
-            $table->string('fotografia', 255)->nullable();
+            $table->text('fotografia')->nullable()->comment('Ruta del archivo almacenado'); // Flexible para rutas largas
             $table->string('area_experiencia', 255)->nullable();
             $table->string('red_social', 255)->nullable();
             $table->timestamps();

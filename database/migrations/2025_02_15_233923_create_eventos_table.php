@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('lugar', 255)->notNull();
             $table->integer('cupo_maximo')->notNull();
             $table->timestamps();
+            $table->unsignedBigInteger('ponenteId')->nullable()->after('cupo_maximo'); // Añade la columna después de 'cupo_maximo'
+            $table->foreign('ponenteId')->references('id')->on('ponentes')->onDelete('cascade'); // Clave foránea
         });
     }
 
