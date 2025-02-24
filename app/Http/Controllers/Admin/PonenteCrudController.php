@@ -27,7 +27,8 @@ class PonenteCrudController extends CrudController
     public function setup()
     {
         CRUD::setModel(\App\Models\Ponente::class);
-        CRUD::setRoute(config('backpack.base.route_prefix') . '/ponente');
+        //CRUD::setRoute(config('backpack.base.route_prefix') . '/ponente');
+        CRUD::setRoute(config('backpack.base.route_prefix', 'admin') . '/ponentes');
         CRUD::setEntityNameStrings('ponente', 'ponentes');
     }
 
@@ -49,7 +50,7 @@ class PonenteCrudController extends CrudController
 
         // Configuración de CRUD
         $this->crud->setModel('App\Models\Ponente');       // Modelo Ponente
-        $this->crud->setRoute('admin/ponentes');           // Ruta del CRUD
+        $this->crud->setRoute('admin/ponente');           // Ruta del CRUD
         $this->crud->setEntityNameStrings('ponente', 'ponentes'); // Singular/plural
 
 

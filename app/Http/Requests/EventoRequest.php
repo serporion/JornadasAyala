@@ -15,8 +15,8 @@ class EventoRequest extends FormRequest
     public function authorize()
     {
         // only allow updates if the user is logged in
-        //return backpack_auth()->check();
-        return auth()->check() && auth()->user()->role('user');
+        return backpack_auth()->check();
+        //return auth()->check() && auth()->user()->role('user');
     }
 
     /**
@@ -31,7 +31,7 @@ class EventoRequest extends FormRequest
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'fecha' => 'required|date',
-            'hora_inicio' => 'required|date_format:H:i',
+            'hora_inicio' => 'required|date_format:H:i:s',
             'duracion' => 'required|integer|min:1|max:180',
             'lugar' => 'required|string|max:255',
             'cupo_maximo' => 'required|integer|min:1',

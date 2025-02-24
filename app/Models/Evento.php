@@ -24,7 +24,7 @@ class Evento extends Model
         'duracion',
         'lugar',
         'cupo_maximo',
-        'ponenteId',
+        'ponente_id',
     ];
 
 

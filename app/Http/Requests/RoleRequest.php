@@ -26,8 +26,8 @@ class RoleRequest extends FormRequest
     {
         return [
             'nombre' => 'required|string|max:255',
-            'email' => 'required|email|unique:alumnos,email,' . $this->id,
-            'dni' => 'required|string|max:20|unique:alumnos,dni,' . $this->id,
+            //'email' => 'required|email|unique:alumnos,email,' . $this->id,
+            //'dni' => 'required|string|max:20|unique:alumnos,dni,' . $this->id,
         ];
     }
 

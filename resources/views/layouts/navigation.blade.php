@@ -16,7 +16,7 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-gray-300 hover:text-white">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <div class="flex items-center"><p>Bienbenido@!</p></div>
+                    <div class="flex items-center"><p>Bienvenido@!</p></div>
 
 
                 </div>

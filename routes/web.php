@@ -116,7 +116,9 @@ Route::get('/paypal/cancel', [PayPalController::class, 'pagoCancelado'])->
 name('paypal.pagoCancelado');
 
 
-Route::get('ponentes', [PonenteController::class, 'index'])->name('ponentes.index');
+Route::get('ponentesWeb', [PonenteController::class, 'indexMostrar'])->name('ponentesWeb.indexMostrar');
+
+
 
 /*
 Route::get('/imagen/{filename}', [PonenteController::class, 'mostrarImagen'])->

@@ -36,7 +36,21 @@ class PonenteController extends Controller
             $ponente->eventos = $ponente->eventos->unique('nombre'); // Usamos 'id' o el campo que hace único cada evento
         }
 
-        return view('ponentes.index', compact('ponentes'));
+        return view('ponentesWeb.index', compact('ponentes'));
+    }
+
+
+    public function indexMostrar()
+    {
+
+
+        $ponentes = Ponente::with('eventos')->get();
+
+        foreach ($ponentes as $ponente) {
+            $ponente->eventos = $ponente->eventos->unique('nombre'); // Usamos 'id' o el campo que hace único cada evento
+        }
+
+        return view('ponentesWeb.index', compact('ponentes'));
     }
 
     /**
